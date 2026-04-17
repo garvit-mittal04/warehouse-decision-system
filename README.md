@@ -1,3 +1,13 @@
+![Warehouse System](images/06_app_screenshot.png)
+
+## 🚀 Live Project Summary
+
+- Built an end-to-end ML-powered warehouse decision system  
+- Achieved R² = 0.874 for throughput prediction  
+- Identified 89% performance gap between shifts  
+- Quantified disruption cost impact at $2,286/hour  
+- Combined forecasting, classification, and decision logic into one system  
+
 # ML-Powered Warehouse Operations Decision System
 
 An end-to-end warehouse analytics and decision-support system built using real supply chain data to improve staffing, disruption response, and throughput planning.
