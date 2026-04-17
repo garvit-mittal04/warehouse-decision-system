@@ -1,4 +1,4 @@
-![Dashboard](./images/06_app_screenshot.png)
+![Warehouse Decision System](images/06_app_screenshot.png)
 
 ## 🚀 Live Project Summary
 
