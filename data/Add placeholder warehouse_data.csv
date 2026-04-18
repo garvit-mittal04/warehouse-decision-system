@@ -1,0 +1,6 @@
+shift,staff_hours,disruption_hours,order_volume,throughput_units,risk_level
+Morning,8,1,1500,2847,Low
+Night,8,3,1200,1510,High
+Morning,9,0,1800,3200,Low
+Night,7,4,1000,980,High
+Morning,8,2,1600,2650,Medium
