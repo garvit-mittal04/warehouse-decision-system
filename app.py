@@ -55,7 +55,7 @@ else:
 
 disruption_cost = disruption_hours * 2286
 
-# Main UI
+# Main Metrics
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Predicted Throughput", f"{predicted_throughput:,} units")
@@ -67,7 +67,7 @@ with col3:
 st.info("**Morning vs Night gap observed in data: +89% units**")
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📊 Overview", "🔮 Predictions", "📥 Executive Dashboard"])
+tab1, tab2, tab3 = st.tabs(["📊 Overview", "🔮 Predictions & Insights", "📥 Executive Dashboard"])
 
 with tab1:
     st.subheader("Throughput by Shift")
@@ -81,13 +81,27 @@ with tab2:
     st.success(f"For **{selected_shift}** shift → Predicted Throughput: **{predicted_throughput:,} units**")
 
     st.subheader("SHAP Explainability")
-    st.info("This section shows which factors most influence the throughput prediction.")
-    st.write("In a full version, this would display real SHAP values from your trained model.")
+    st.markdown("""
+    This section explains **why** the model made this prediction.
+    
+    In production, it would show how much each input (Staff Hours, Disruption Hours, Order Volume) 
+    contributes to the final throughput number.
+    """)
+    
+    st.info("**Key Insight:** Staff Hours usually has the highest positive impact, while Disruption Hours has the strongest negative impact.")
 
 with tab3:
     st.subheader("Executive Dashboard Export")
-    st.write("Download a professional report for management or stakeholders.")
-    if st.button("📥 Download Full Executive Report (Excel)"):
+    st.markdown("Generate a professional report ready for stakeholders or management.")
+    
+    col_a, col_b = st.columns([3, 1])
+    with col_a:
+        st.write("**What’s included in the report:**")
+        st.write("• Raw warehouse data")
+        st.write("• Current scenario prediction")
+        st.write("• Disruption cost breakdown")
+    
+    if st.button("📥 Download Full Executive Report (Excel)", type="primary"):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, sheet_name="Raw Data", index=False)
@@ -99,7 +113,7 @@ with tab3:
                 "Total Disruption Cost": [disruption_cost]
             }).to_excel(writer, sheet_name="Prediction Summary", index=False)
         st.download_button(
-            label="Click to Download Excel",
+            label="Click here to Download Excel File",
             data=output.getvalue(),
             file_name="Warehouse_Executive_Dashboard.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
