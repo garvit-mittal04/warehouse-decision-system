@@ -10,7 +10,7 @@ st.markdown("**Interactive ML-powered insights for staffing, throughput & risk**
 # Load data
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/warehouse_data.csv")
+    return pd.read_csv("warehouse_data.csv")
 
 df = load_data()
 
