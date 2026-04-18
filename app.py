@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import joblib
+import shap
 import io
 
 st.set_page_config(page_title="Warehouse Decision System", layout="wide")
@@ -15,7 +16,7 @@ def load_data():
 
 df = load_data()
 
-# Load models safely
+# Load models
 @st.cache_resource
 def load_models():
     try:
@@ -53,6 +54,10 @@ else:
     predicted_throughput = int(800 + staff_hours * 250 - disruption_hours * 300 + (order_volume / 2))
     risk_level = "Medium"
 
+# Enhanced cost calculation
+disruption_cost = disruption_hours * 2286
+cost_impact = f"+${disruption_cost:,.0f}"
+
 # Main UI
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -60,12 +65,12 @@ with col1:
 with col2:
     st.metric("Risk Level", risk_level)
 with col3:
-    st.metric("Est. Disruption Cost", "$2,286", "per extra hour")
+    st.metric("Est. Disruption Cost", f"${disruption_cost:,.0f}", cost_impact)
 
 st.info("**Morning vs Night gap observed in data: +89% units**")
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📊 Overview", "🔮 Predictions", "📥 Executive Dashboard"])
+tab1, tab2, tab3 = st.tabs(["📊 Overview", "🔮 Predictions & SHAP", "📥 Executive Dashboard"])
 
 with tab1:
     st.subheader("Throughput by Shift")
@@ -78,12 +83,32 @@ with tab2:
     st.subheader("Model Prediction")
     st.success(f"For {selected_shift} shift → Predicted Throughput: {predicted_throughput:,} units")
 
+    if model_throughput is not None:
+        st.subheader("SHAP Explainability (Feature Importance)")
+        try:
+            explainer = shap.TreeExplainer(model_throughput)
+            shap_values = explainer.shap_values(input_data)
+            shap_fig = px.bar(x=input_data.columns.tolist(), 
+                              y=shap_values[0],
+                              title="How each factor affects the prediction",
+                              labels={"x": "Feature", "y": "SHAP Impact"})
+            st.plotly_chart(shap_fig, use_container_width=True)
+        except:
+            st.info("SHAP visualization is available when your model supports it.")
+
 with tab3:
     st.subheader("Executive Dashboard Export")
     if st.button("📥 Download Full Executive Report (Excel)"):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, sheet_name="Raw Data", index=False)
+            pd.DataFrame({
+                "Scenario": ["Current"],
+                "Predicted Throughput": [predicted_throughput],
+                "Risk Level": [risk_level],
+                "Disruption Hours": [disruption_hours],
+                "Total Disruption Cost": [disruption_cost]
+            }).to_excel(writer, sheet_name="Prediction Summary", index=False)
         st.download_button(
             label="Click to Download Excel",
             data=output.getvalue(),
@@ -91,4 +116,4 @@ with tab3:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-st.caption("Built by Garvit Mittal")
+st.caption("Built by Garvit Mittal • Real ML Models + Enhanced SHAP + Executive Export")
