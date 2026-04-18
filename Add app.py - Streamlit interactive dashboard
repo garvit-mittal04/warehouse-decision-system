@@ -1,0 +1,60 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+st.set_page_config(page_title="Warehouse Decision System", layout="wide")
+
+st.title("🚀 Warehouse Decision Support System")
+st.markdown("**Interactive ML-powered insights for staffing, throughput & risk**")
+
+# Load the data
+@st.cache_data
+def load_data():
+    return pd.read_csv("data/warehouse_data.csv")
+
+df = load_data()
+
+# Sidebar - User Controls
+st.sidebar.header("🎛️ Scenario Controls")
+
+selected_shift = st.sidebar.selectbox("Select Shift", options=df["shift"].unique())
+
+staff_hours = st.sidebar.slider("Staff Hours", min_value=4, max_value=12, value=8)
+disruption_hours = st.sidebar.slider("Disruption Hours", min_value=0, max_value=8, value=1)
+order_volume = st.sidebar.number_input("Expected Order Volume", min_value=500, max_value=5000, value=1500)
+
+# Filter data
+filtered = df[df["shift"] == selected_shift]
+
+# Main Metrics
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    avg_throughput = int(filtered["throughput_units"].mean())
+    st.metric("Predicted Throughput", f"{avg_throughput:,} units")
+
+with col2:
+    risk = filtered["risk_level"].iloc[0]
+    st.metric("Risk Level", risk)
+
+with col3:
+    st.metric("Est. Disruption Cost", "$2,286", "per extra hour")
+
+# Charts
+st.subheader("Throughput Comparison by Shift")
+fig_bar = px.bar(df, x="shift", y="throughput_units", color="risk_level",
+                 title="Morning vs Night Shift Performance")
+st.plotly_chart(fig_bar, use_container_width=True)
+
+st.subheader("Your Selected Data")
+st.dataframe(filtered)
+
+# Download option
+if st.button("📥 Download Full Dataset"):
+    csv = df.to_csv(index=False)
+    st.download_button(label="Click here to download CSV", 
+                       data=csv, 
+                       file_name="warehouse_data.csv", 
+                       mime="text/csv")
+
+st.caption("Built by Garvit Mittal • Powered by Streamlit • Warehouse Decision System")
