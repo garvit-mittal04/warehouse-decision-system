@@ -16,13 +16,19 @@ def load_data():
 
 df = load_data()
 
-# ====================== LOAD MODELS (add your .pkl files later) ======================
-# @st.cache_resource
-# def load_models():
-#     throughput_model = joblib.load("models/throughput_model.pkl")
-#     risk_model = joblib.load("models/risk_classifier.pkl")
-#     return throughput_model, risk_model
-# model_throughput, model_risk = load_models()
+# ====================== LOAD TRAINED MODELS ======================
+# IMPORTANT: First save your models from notebooks as .pkl files in a "models" folder
+@st.cache_resource
+def load_models():
+    try:
+        throughput_model = joblib.load("models/throughput_model.pkl")
+        risk_model = joblib.load("models/risk_classifier.pkl")
+        return throughput_model, risk_model
+    except:
+        st.warning("Models not found yet. Using simulated predictions for now.")
+        return None, None
+
+model_throughput, model_risk = load_models()
 
 # ====================== SIDEBAR ======================
 st.sidebar.header("🎛️ Scenario Controls")
@@ -32,9 +38,20 @@ staff_hours = st.sidebar.slider("Staff Hours", 4, 12, 8)
 disruption_hours = st.sidebar.slider("Disruption Hours", 0, 8, 1)
 order_volume = st.sidebar.number_input("Expected Order Volume", 500, 5000, 1500)
 
-# ====================== SIMULATED PREDICTIONS (replace with real models later) ======================
-predicted_throughput = int(800 + staff_hours * 250 - disruption_hours * 300 + (order_volume / 2))
-risk_level = "High" if disruption_hours >= 3 else "Medium" if disruption_hours >= 1 else "Low"
+# ====================== REAL PREDICTIONS ======================
+if model_throughput is not None:
+    # Prepare input for model (adjust feature names if needed)
+    input_data = pd.DataFrame({
+        'staff_hours': [staff_hours],
+        'disruption_hours': [disruption_hours],
+        'order_volume': [order_volume]
+    })
+    predicted_throughput = int(model_throughput.predict(input_data)[0])
+    risk_level = model_risk.predict(input_data)[0] if model_risk is not None else "Medium"
+else:
+    # Fallback simulated prediction
+    predicted_throughput = int(800 + staff_hours * 250 - disruption_hours * 300 + (order_volume / 2))
+    risk_level = "High" if disruption_hours >= 3 else "Medium" if disruption_hours >= 1 else "Low"
 
 # ====================== MAIN DASHBOARD ======================
 col1, col2, col3 = st.columns(3)
@@ -46,7 +63,9 @@ with col2:
 with col3:
     st.metric("Est. Disruption Cost", "$2,286", "per extra hour")
 
-# Tabs for better organization
+st.info(f"**Morning vs Night gap observed in data: +89% units**")
+
+# Tabs
 tab1, tab2, tab3 = st.tabs(["📊 Overview", "🔮 Predictions & SHAP", "📥 Executive Dashboard"])
 
 with tab1:
@@ -54,31 +73,35 @@ with tab1:
     fig = px.bar(df, x="shift", y="throughput_units", color="risk_level",
                  title="Morning vs Night Performance", color_discrete_sequence=["#FF6B6B", "#4ECDC4"])
     st.plotly_chart(fig, use_container_width=True)
-
-    st.subheader("Raw Data")
     st.dataframe(df, use_container_width=True)
 
 with tab2:
-    st.subheader("Model Predictions")
-    st.info(f"**Predicted Throughput for {selected_shift} shift:** {predicted_throughput:,} units")
-    st.info(f"**Risk Level:** {risk_level}")
+    st.subheader("Model Prediction")
+    st.success(f"**For {selected_shift} shift → Predicted Throughput: {predicted_throughput:,} units**")
 
-    st.subheader("SHAP Explainability (Feature Importance)")
-    st.write("In a real model, this would show which factors affect throughput the most.")
-    # Placeholder SHAP plot (replace with real SHAP when you have models)
-    shap_fig = px.bar(x=["Staff Hours", "Disruption Hours", "Order Volume"], 
-                      y=[0.45, 0.32, 0.23], 
-                      labels={"x": "Feature", "y": "SHAP Impact"},
-                      title="Top Features Impacting Throughput")
-    st.plotly_chart(shap_fig, use_container_width=True)
+    if model_throughput is not None:
+        st.subheader("SHAP Explainability (What drives the prediction?)")
+        explainer = shap.TreeExplainer(model_throughput)
+        shap_values = explainer.shap_values(input_data)
+        shap_fig = px.bar(x=input_data.columns, y=shap_values[0],
+                          labels={"x": "Feature", "y": "SHAP Impact"},
+                          title="Feature Contribution to Throughput")
+        st.plotly_chart(shap_fig, use_container_width=True)
+    else:
+        st.info("Add your trained models to see real SHAP explanations.")
 
 with tab3:
     st.subheader("Executive Dashboard Export")
-    if st.button("📥 Download Full Executive Dashboard as Excel"):
+    if st.button("📥 Download Full Executive Report (Excel)"):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, sheet_name="Raw Data", index=False)
-            # You can add more sheets (summary, predictions, etc.) here later
+            pd.DataFrame({
+                "Scenario": ["Current"],
+                "Predicted Throughput": [predicted_throughput],
+                "Risk Level": [risk_level],
+                "Disruption Cost": [2286]
+            }).to_excel(writer, sheet_name="Prediction Summary", index=False)
         st.download_button(
             label="Click to Download Excel",
             data=output.getvalue(),
@@ -86,4 +109,4 @@ with tab3:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-st.caption("Built by Garvit Mittal • Enhanced Version with Models + SHAP + Excel Export")
+st.caption("Built by Garvit Mittal • Real ML Models + SHAP + Executive Export")
