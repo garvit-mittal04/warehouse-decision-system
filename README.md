@@ -1,16 +1,22 @@
-![Dashboard](./images/dashboard.png)
-
-## 🚀 Live Project Summary
-
-- Built an end-to-end ML-powered warehouse decision system  
-- Achieved R² = 0.874 for throughput prediction  
-- Identified 89% performance gap between shifts  
-- Quantified disruption cost impact at $2,286/hour  
-- Combined forecasting, classification, and decision logic into one system  
-
 # ML-Powered Warehouse Operations Decision System
 
 An end-to-end warehouse analytics and decision-support system built using real supply chain data to improve staffing, disruption response, and throughput planning.
+
+[![Live App](https://img.shields.io/badge/Live%20App-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://warehouse-garvit.streamlit.app)
+
+---
+
+## 🚀 Live Project Summary
+
+- Built an end-to-end ML-powered warehouse decision system
+- Achieved R² = 0.874 for throughput prediction
+- Identified 89% performance gap between shifts
+- Quantified disruption cost impact at $2,286/hour
+- Combined forecasting, classification, and decision logic into one system
+
+**[→ Open the live Streamlit app](https://warehouse-garvit.streamlit.app)**
+
+---
 
 ## Overview
 
@@ -62,6 +68,7 @@ This project addresses those problems by designing a system that helps answer:
 ## System Components
 
 ### 1. Demand Forecasting
+
 Used **Facebook Prophet** to generate 30-day shipment demand forecasts.
 
 **Purpose**
@@ -70,6 +77,7 @@ Used **Facebook Prophet** to generate 30-day shipment demand forecasts.
 - provide forward-looking operational visibility
 
 ### 2. Risk Classification
+
 Used **XGBoost + business rules** to classify operational risk.
 
 **Purpose**
@@ -78,6 +86,7 @@ Used **XGBoost + business rules** to classify operational risk.
 - combine ML predictions with business judgment
 
 ### 3. Throughput Prediction
+
 Used **Gradient Boosting** to predict shift-level throughput.
 
 **Purpose**
@@ -86,6 +95,7 @@ Used **Gradient Boosting** to predict shift-level throughput.
 - identify underperforming operating conditions
 
 ### 4. SQL Data Architecture
+
 Built a structured **MySQL schema** with normalized tables and analytical queries.
 
 **Purpose**
@@ -94,6 +104,7 @@ Built a structured **MySQL schema** with normalized tables and analytical querie
 - answer warehouse performance questions through SQL
 
 ### 5. Statistical Validation
+
 Used **R** to perform formal hypothesis testing and validate business claims.
 
 **Purpose**
@@ -101,6 +112,7 @@ Used **R** to perform formal hypothesis testing and validate business claims.
 - avoid relying on visual trends or assumptions alone
 
 ### 6. Explainability
+
 Used **SHAP** to explain feature importance and prediction behavior.
 
 **Purpose**
@@ -108,13 +120,16 @@ Used **SHAP** to explain feature importance and prediction behavior.
 - improve trust in recommendations
 - show which variables drive predictions most strongly
 
-### 7. Dashboard + Interactive App
-Built an **Excel executive dashboard** and a **Google Colab interactive app**.
+### 7. Interactive Decision App
+
+Built a live **Streamlit application** for interactive scenario evaluation and stakeholder decision support.
 
 **Purpose**
-- turn analysis into decision-ready outputs
-- give stakeholders a usable reporting interface
-- bridge the gap between modeling and action
+- turn model outputs into a usable decision interface
+- allow scenario testing across staffing, disruption, and throughput inputs
+- bridge the gap between modeling and operational action
+
+**[→ Launch the app](https://warehouse-garvit.streamlit.app)**
 
 ---
 
@@ -127,8 +142,9 @@ Built an **Excel executive dashboard** and a **Google Colab interactive app**.
 - **Scikit-learn Gradient Boosting** — throughput prediction
 - **R** — statistical validation
 - **SHAP** — model explainability
+- **Streamlit** — live interactive decision app
 - **Excel** — executive dashboard
-- **Google Colab / Jupyter** — modeling and interactive app
+- **Jupyter** — modeling notebooks
 
 ---
 
@@ -169,3 +185,4 @@ warehouse-decision-system/
     ├── test4_regression_fit.png
     ├── test5_ks_distributions.png
     └── test6_confidence_intervals.png
+```
