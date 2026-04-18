@@ -15,7 +15,7 @@ def load_data():
 
 df = load_data()
 
-# Load models safely
+# Load models
 @st.cache_resource
 def load_models():
     try:
@@ -23,7 +23,7 @@ def load_models():
         risk_model = joblib.load("models/risk_classifier.pkl")
         st.success("✅ Real models loaded successfully!")
         return throughput_model, risk_model
-    except Exception as e:
+    except:
         st.warning("⚠️ Could not load models. Using simulated predictions.")
         return None, None
 
@@ -53,7 +53,6 @@ else:
     predicted_throughput = int(800 + staff_hours * 250 - disruption_hours * 300 + (order_volume / 2))
     risk_level = "Medium"
 
-# Cost calculation
 disruption_cost = disruption_hours * 2286
 
 # Main UI
@@ -79,14 +78,26 @@ with tab1:
 
 with tab2:
     st.subheader("Model Prediction")
-    st.success(f"For {selected_shift} shift → Predicted Throughput: {predicted_throughput:,} units")
+    st.success(f"For **{selected_shift}** shift → Predicted Throughput: **{predicted_throughput:,} units**")
+
+    st.subheader("SHAP Explainability")
+    st.info("This section shows which factors most influence the throughput prediction.")
+    st.write("In a full version, this would display real SHAP values from your trained model.")
 
 with tab3:
     st.subheader("Executive Dashboard Export")
+    st.write("Download a professional report for management or stakeholders.")
     if st.button("📥 Download Full Executive Report (Excel)"):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, sheet_name="Raw Data", index=False)
+            pd.DataFrame({
+                "Scenario": ["Current"],
+                "Predicted Throughput": [predicted_throughput],
+                "Risk Level": [risk_level],
+                "Disruption Hours": [disruption_hours],
+                "Total Disruption Cost": [disruption_cost]
+            }).to_excel(writer, sheet_name="Prediction Summary", index=False)
         st.download_button(
             label="Click to Download Excel",
             data=output.getvalue(),
@@ -94,4 +105,4 @@ with tab3:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-st.caption("Built by Garvit Mittal")
+st.caption("Built by Garvit Mittal • Real ML Models + Interactive Dashboard")
