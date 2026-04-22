@@ -23,6 +23,69 @@ An end-to-end warehouse analytics and decision-support system built using real s
 
 Most warehouse operations still rely heavily on intuition for critical decisions such as staffing, disruption handling, and shift planning. This project was built to test what happens when those decisions are supported by a full analytics and machine learning pipeline instead.
 
+## 🏗️ System Architecture
+
+This project follows an end-to-end analytics and decision system architecture:
+```text
+                 ┌────────────────────┐
+                 │   Warehouse Data   │
+                 │ (CSV / Raw Input)  │
+                 └─────────┬──────────┘
+                           │
+                           ▼
+                 ┌────────────────────┐
+                 │   SQL Layer        │
+                 │ (MySQL + Queries)  │
+                 └─────────┬──────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
+┌──────────────┐  ┌────────────────┐  ┌──────────────────┐
+│ Demand Model │  │ Risk Classifier│  │ Throughput Model │
+│  (Prophet)   │  │  (XGBoost)     │  │ (Gradient Boost) │
+└──────┬───────┘  └──────┬─────────┘  └──────┬───────────┘
+       │                 │                   │
+       └──────────┬──────┴───────────┬───────┘
+                  ▼                  ▼
+         ┌────────────────────────────────┐
+         │ Decision Logic Layer           │
+         │ (Business Rules + Insights)    │
+         └──────────────┬─────────────────┘
+                        ▼
+         ┌────────────────────────────────┐
+         │ Streamlit App (User Interface) │
+         │ Scenario Testing & Decisions   │
+         └──────────────┬─────────────────┘
+                        ▼
+         ┌────────────────────────────────┐
+         │ Power Automate (Automation)    │
+         │ Alerts + Logging (Excel)       │
+         └────────────────────────────────┘
+
+
+---
+
+# 🔥 STEP 3: Add Explanation (this is what makes it “top 1%”)
+
+Right below the diagram, add:
+
+```md
+### How It Works
+
+1. Raw warehouse data is ingested and structured using SQL
+2. Multiple ML models generate predictions:
+   - demand forecasting
+   - risk classification
+   - throughput prediction
+3. A decision layer translates predictions into actionable insights
+4. The Streamlit app allows users to interact with the system
+5. Power Automate adds a real-time automation layer:
+   - detects new reports
+   - sends alerts
+   - logs activity for auditing
+
+This creates a full pipeline from data → models → decisions → automation.
+
 The result is a warehouse decision system that combines:
 
 - relational database design
