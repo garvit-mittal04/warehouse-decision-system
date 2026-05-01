@@ -72,6 +72,28 @@ def get_tree_predictions(shift_enc_classes, shift, staff_hours, disruption_hours
     except:
         return None
 
+@st.cache_data
+def compute_optimizer_grid(shift, order_volume):
+    """Pre-compute all 81 predictions for the optimizer heatmap."""
+    rows = []
+    for dis in range(0, 9):
+        for staff in range(4, 13):
+            tp_pred, _, _, risk_pred, _ = predict(shift, staff, dis, order_volume)
+            cost_total = dis * DISRUPTION_COST_PER_HOUR + staff * LABOUR_COST_PER_HOUR
+            rows.append({"Disruption Hours": dis, "Staff Hours": staff,
+                         "Predicted Throughput": tp_pred, "Total Cost": cost_total,
+                         "Risk Level": risk_pred})
+    return pd.DataFrame(rows)
+
+@st.cache_data
+def compute_sensitivity_sweep(shift, disruption_hours, order_volume):
+    """Cache the staff-hours sensitivity sweep (9 predictions)."""
+    return [{"Staff Hours": sh,
+             "Throughput": predict(shift, sh, disruption_hours, order_volume)[0],
+             "Lower":      predict(shift, sh, disruption_hours, order_volume)[1],
+             "Upper":      predict(shift, sh, disruption_hours, order_volume)[2]}
+            for sh in range(4, 13)]
+
 df = load_data()
 tp_model, risk_model, shift_enc, risk_enc, models_ok = load_models()
 metrics = load_metrics()
@@ -294,15 +316,9 @@ with tab_optimizer:
         st.metric("Target", f"{target_tp:,} units")
         st.metric("Budget", f"${max_budget:,.0f}")
 
-    results = []
-    for dis in range(0, 9):
-        for staff in range(4, 13):
-            tp_pred, _, _, risk_pred, _ = predict(opt_shift, staff, dis, opt_order)
-            cost_total = dis * DISRUPTION_COST_PER_HOUR + staff * LABOUR_COST_PER_HOUR
-            results.append({"Disruption Hours":dis,"Staff Hours":staff,"Predicted Throughput":tp_pred,
-                            "Total Cost":cost_total,"Risk Level":risk_pred,
-                            "Meets Target":tp_pred>=target_tp,"Within Budget":cost_total<=max_budget})
-    res_df   = pd.DataFrame(results)
+    res_df = compute_optimizer_grid(opt_shift, opt_order)
+    res_df["Meets Target"]  = res_df["Predicted Throughput"] >= target_tp
+    res_df["Within Budget"] = res_df["Total Cost"] <= max_budget
     feasible = res_df[res_df["Meets Target"] & res_df["Within Budget"]]
 
     if feasible.empty:
@@ -330,9 +346,7 @@ with tab_optimizer:
 
     st.divider()
     st.markdown("**Sensitivity: throughput vs staff hours (at Scenario A disruption level)**")
-    sweep = [{"Staff Hours":sh, **dict(zip(["Throughput","Lower","Upper"],
-              [predict(shift_a, sh, disruption_a, order_a)[i] for i in [0,1,2]]))} for sh in range(4,13)]
-    sweep_df = pd.DataFrame(sweep)
+    sweep_df = pd.DataFrame(compute_sensitivity_sweep(shift_a, disruption_a, order_a))
     fig_sens = go.Figure([
         go.Scatter(x=sweep_df["Staff Hours"], y=sweep_df["Upper"], line=dict(width=0), showlegend=False, mode='lines'),
         go.Scatter(x=sweep_df["Staff Hours"], y=sweep_df["Lower"], fill='tonexty',
