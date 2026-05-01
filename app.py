@@ -51,6 +51,27 @@ def load_metrics():
     except:
         return {}
 
+@st.cache_data
+def load_dashboard_template():
+    try:
+        with open("dashboard/warehouse_operations_dashboard.xlsx", "rb") as f:
+            return f.read()
+    except:
+        return None
+
+@st.cache_data
+def get_tree_predictions(shift_enc_classes, shift, staff_hours, disruption_hours, order_volume):
+    """Cache the 150-tree prediction loop — only re-runs when inputs change."""
+    if not models_ok:
+        return None
+    try:
+        shift_num = shift_enc.transform([shift])[0]
+        X = pd.DataFrame([[shift_num, staff_hours, disruption_hours, order_volume]],
+                         columns=['shift_enc','staff_hours','disruption_hours','order_volume'])
+        return np.array([t.predict(X)[0] for t in tp_model.estimators_])
+    except:
+        return None
+
 df = load_data()
 tp_model, risk_model, shift_enc, risk_enc, models_ok = load_models()
 metrics = load_metrics()
@@ -366,10 +387,8 @@ with tab_model:
     st.divider()
     st.markdown("**Prediction Distribution — all 150 trees for Scenario A**")
     if models_ok:
-        shift_num = shift_enc.transform([shift_a])[0]
-        X_now = pd.DataFrame([[shift_num, staff_a, disruption_a, order_a]],
-                             columns=['shift_enc','staff_hours','disruption_hours','order_volume'])
-        tree_preds_now = np.array([t.predict(X_now)[0] for t in tp_model.estimators_])
+        tree_preds_now = get_tree_predictions(
+            tuple(shift_enc.classes_), shift_a, staff_a, disruption_a, order_a)
         fig_conf = go.Figure()
         fig_conf.add_trace(go.Histogram(x=tree_preds_now, nbinsx=25, marker_color='#1F4E79', opacity=0.8))
         fig_conf.add_vline(x=tp_a,    line_color='#C00000', line_width=2, annotation_text=f"  Mean: {tp_a:,}")
@@ -399,12 +418,9 @@ with tab_export:
             from openpyxl.chart import BarChart, Reference
             from openpyxl.utils import get_column_letter
 
-            @st.cache_data
-            def load_dashboard_template():
-                with open("dashboard/warehouse_operations_dashboard.xlsx","rb") as f:
-                    return f.read()
-
             dashboard_bytes = load_dashboard_template()
+            if not dashboard_bytes:
+                raise FileNotFoundError("dashboard/warehouse_operations_dashboard.xlsx not found")
             dashboard_wb = openpyxl.load_workbook(io.BytesIO(dashboard_bytes))
             if "Scenario Prediction" in dashboard_wb.sheetnames:
                 del dashboard_wb["Scenario Prediction"]
