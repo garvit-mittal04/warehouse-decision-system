@@ -1,0 +1,23 @@
+{
+  "throughput": {
+    "mae": 192.3,
+    "r2": 0.934,
+    "cv_r2": 0.931
+  },
+  "risk": {
+    "accuracy": 0.917
+  },
+  "dataset_size": 1200,
+  "feature_importances_throughput": {
+    "shift_enc": 0.026,
+    "staff_hours": 0.321,
+    "disruption_hours": 0.431,
+    "order_volume": 0.222
+  },
+  "feature_importances_risk": {
+    "shift_enc": 0.029,
+    "staff_hours": 0.063,
+    "disruption_hours": 0.672,
+    "order_volume": 0.236
+  }
+}
