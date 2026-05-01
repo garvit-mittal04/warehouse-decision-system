@@ -380,7 +380,7 @@ with tab_model:
     st.divider()
     st.markdown("**Historical Stats by Shift**")
     shift_stats = df.groupby('shift')['throughput_units'].agg(['mean','std','min','max','count']).round(1)
-    st.dataframe(shift_stats.style.background_gradient(cmap='Blues', subset=['mean']), use_container_width=True)
+    st.dataframe(shift_stats, use_container_width=True)
 
 # ── TAB 5: EXPORT ────────────────────────────────────────────────────────────
 with tab_export:
