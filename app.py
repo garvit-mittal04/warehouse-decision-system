@@ -113,7 +113,10 @@ with col_h1:
     st.title("🏭 Warehouse Decision Support System")
     st.caption("ML-powered insights for staffing, throughput & risk · Built by Garvit Mittal · v2.0")
 with col_h2:
-    st.success("✅ Real ML models active") if models_ok else st.warning("⚠️ Formula fallback")
+    if models_ok:
+        st.success("✅ Real ML models active")
+    else:
+        st.warning("⚠️ Formula fallback")
 
 alerts = []
 if cost_a > alert_cost:
