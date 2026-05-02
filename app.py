@@ -60,9 +60,12 @@ def load_dashboard_template():
         return None
 
 @st.cache_data
-def get_tree_predictions(shift_enc_classes, shift, staff_hours, disruption_hours, order_volume):
-    """Cache the 150-tree prediction loop — only re-runs when inputs change."""
-    if not models_ok:
+def get_tree_predictions(shift_enc_classes, shift, staff_hours, disruption_hours, order_volume, _models_ok):
+    """Cache the 150-tree prediction loop — only re-runs when inputs change.
+    _models_ok is prefixed with _ so Streamlit skips hashing it (bool is fine
+    to hash, but the underscore convention makes the intent explicit).
+    """
+    if not _models_ok:
         return None
     try:
         shift_num = shift_enc.transform([shift])[0]
@@ -73,7 +76,7 @@ def get_tree_predictions(shift_enc_classes, shift, staff_hours, disruption_hours
         return None
 
 @st.cache_data
-def compute_optimizer_grid(shift, order_volume):
+def compute_optimizer_grid(shift, order_volume, _models_ok):
     """Pre-compute all 81 predictions for the optimizer heatmap."""
     rows = []
     for dis in range(0, 9):
@@ -86,13 +89,13 @@ def compute_optimizer_grid(shift, order_volume):
     return pd.DataFrame(rows)
 
 @st.cache_data
-def compute_sensitivity_sweep(shift, disruption_hours, order_volume):
+def compute_sensitivity_sweep(shift, disruption_hours, order_volume, _models_ok):
     """Cache the staff-hours sensitivity sweep (9 predictions)."""
-    return [{"Staff Hours": sh,
-             "Throughput": predict(shift, sh, disruption_hours, order_volume)[0],
-             "Lower":      predict(shift, sh, disruption_hours, order_volume)[1],
-             "Upper":      predict(shift, sh, disruption_hours, order_volume)[2]}
-            for sh in range(4, 13)]
+    result = []
+    for sh in range(4, 13):
+        tp, lo, hi, _, _ = predict(shift, sh, disruption_hours, order_volume)
+        result.append({"Staff Hours": sh, "Throughput": tp, "Lower": lo, "Upper": hi})
+    return result
 
 df = load_data()
 tp_model, risk_model, shift_enc, risk_enc, models_ok = load_models()
@@ -241,11 +244,6 @@ with tab_compare:
 
         with col_a:
             st.markdown(f"#### Scenario A — {shift_a} Shift")
-            for label, val, col in [
-                ("Throughput","f{tp_a:,} units","#002060"), ("Risk",risk_a,risk_col.get(risk_a,"#555")),
-                ("Disruption Cost",f"${cost_a:,.0f}","#7B0000" if cost_a>5000 else "#1F4E79"),
-                ("Labour Cost",f"${labour_a:,.0f}","#1F4E79"), ("Confidence",f"{conf_a}%","#1F4E79")]:
-                pass
             st.markdown(kpi_card("Throughput", f"{tp_a:,} units"), unsafe_allow_html=True)
             st.markdown(kpi_card("Risk Level", risk_a, color=risk_col.get(risk_a,"#1F4E79")), unsafe_allow_html=True)
             st.markdown(kpi_card("Disruption Cost", f"${cost_a:,.0f}", "#7B0000" if cost_a>5000 else "#1F4E79"), unsafe_allow_html=True)
@@ -316,7 +314,7 @@ with tab_optimizer:
         st.metric("Target", f"{target_tp:,} units")
         st.metric("Budget", f"${max_budget:,.0f}")
 
-    res_df = compute_optimizer_grid(opt_shift, opt_order)
+    res_df = compute_optimizer_grid(opt_shift, opt_order, models_ok)
     res_df["Meets Target"]  = res_df["Predicted Throughput"] >= target_tp
     res_df["Within Budget"] = res_df["Total Cost"] <= max_budget
     feasible = res_df[res_df["Meets Target"] & res_df["Within Budget"]]
@@ -346,7 +344,7 @@ with tab_optimizer:
 
     st.divider()
     st.markdown("**Sensitivity: throughput vs staff hours (at Scenario A disruption level)**")
-    sweep_df = pd.DataFrame(compute_sensitivity_sweep(shift_a, disruption_a, order_a))
+    sweep_df = pd.DataFrame(compute_sensitivity_sweep(shift_a, disruption_a, order_a, models_ok))
     fig_sens = go.Figure([
         go.Scatter(x=sweep_df["Staff Hours"], y=sweep_df["Upper"], line=dict(width=0), showlegend=False, mode='lines'),
         go.Scatter(x=sweep_df["Staff Hours"], y=sweep_df["Lower"], fill='tonexty',
@@ -402,7 +400,7 @@ with tab_model:
     st.markdown("**Prediction Distribution — all 150 trees for Scenario A**")
     if models_ok:
         tree_preds_now = get_tree_predictions(
-            tuple(shift_enc.classes_), shift_a, staff_a, disruption_a, order_a)
+            tuple(shift_enc.classes_), shift_a, staff_a, disruption_a, order_a, models_ok)
         fig_conf = go.Figure()
         fig_conf.add_trace(go.Histogram(x=tree_preds_now, nbinsx=25, marker_color='#1F4E79', opacity=0.8))
         fig_conf.add_vline(x=tp_a,    line_color='#C00000', line_width=2, annotation_text=f"  Mean: {tp_a:,}")
