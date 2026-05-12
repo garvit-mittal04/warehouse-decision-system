@@ -19,6 +19,7 @@ An end-to-end warehouse analytics and decision-support system built using real s
 - Full 5-tab interactive app: Overview, A/B Comparison, Optimizer, Model Intelligence, Export
 
 **[→ Open the live Streamlit app](https://warehouse-garvit.streamlit.app)**
+<img width="1502" height="813" alt="Screenshot 2026-05-12 at 11 53 21 AM" src="https://github.com/user-attachments/assets/cff4ae15-fec6-4986-8f3e-68cac83742a9" />
 
 ---
 
